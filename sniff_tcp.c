@@ -34,7 +34,8 @@ struct tcpheader {
     u_int   tcp_seq;                 /* sequence number */
     u_int   tcp_ack;                 /* acknowledgement number */
     u_char  tcp_offx2;               /* data offset, rsvd */
-#define TH_OFF(th)      (((th)->tcp_offx2 & 0xf0) >> 4)
+// tcp_offx2에서 data offset 추출
+#define TH_OFF(th)      (((th)->tcp_offx2 & 0xf0) >> 4) 
     u_char  tcp_flags;
 #define TH_FIN  0x01
 #define TH_SYN  0x02
@@ -64,7 +65,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     /* determine protocol */
     switch(ip->iph_protocol) {
         case IPPROTO_TCP:
-	    //struct tcpheader *tcp = (struct tcpheader *) (packet + sizeof(struct ethheader) + sizeof(struct ipheader));
+	    // iph_ihl은 워드 단위이기 때문에 4를 곱해서 바이트 단위로 바꿔준다
 	    struct tcpheader *tcp = (struct tcpheader *) (packet + sizeof(struct ethheader) + ip->iph_ihl*4);
 	    printf("   MAC addr: ");
 	    for(int i=0; i<6; i++){
@@ -82,6 +83,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
 	    printf("    IP addr: %s -> %s\n", inet_ntoa(ip->iph_sourceip), inet_ntoa(ip->iph_destip));
             printf("   Port num: %d -> %d\n", ntohs(tcp->tcp_sport), ntohs(tcp->tcp_dport));
 
+	    // data offset은 워드 단위이기 때문에 4를 곱해서 바이트 단위로 바꿔준다
 	    char* buffer = (char *)((char *)tcp + TH_OFF(tcp)*4);
             printf("    Message: %s\n", buffer);
             return;
