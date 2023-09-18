@@ -12,4 +12,5 @@ sudo ./sniff_tcp
 
 
 ## 실행 결과
+로컬호스트와 가상머신 간의 nc 연결 후 패킷 교환 수행
 ![](result.png)
