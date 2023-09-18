@@ -64,21 +64,26 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header,
     /* determine protocol */
     switch(ip->iph_protocol) {
         case IPPROTO_TCP:
-	    struct tcpheader *tcp = (struct tcpheader *) (packet + sizeof(struct ethheader) + sizeof(struct ipheader));
+	    //struct tcpheader *tcp = (struct tcpheader *) (packet + sizeof(struct ethheader) + sizeof(struct ipheader));
+	    struct tcpheader *tcp = (struct tcpheader *) (packet + sizeof(struct ethheader) + ip->iph_ihl*4);
+	    printf("   MAC addr: ");
+	    for(int i=0; i<6; i++){
+		printf("%02x",(unsigned char)eth->ether_shost[i]);
+		if (i != 5)
+		    printf(":");
+	    }
+	    printf(" -> ");
+	    for(int i=0; i<6; i++){
+		printf("%02x",(unsigned char)eth->ether_dhost[i]);
+		if (i != 5)
+		    printf(":");
+	    }
+	    printf("\n");
+	    printf("    IP addr: %s -> %s\n", inet_ntoa(ip->iph_sourceip), inet_ntoa(ip->iph_destip));
+            printf("   Port num: %d -> %d\n", ntohs(tcp->tcp_sport), ntohs(tcp->tcp_dport));
 
-	    printf("Port number: %d\n",ntohs(tcp->tcp_dport));
-	    if (ntohs(tcp->tcp_dport) != 5555)
-		    return;
-	    printf("       From: %s\n", inet_ntoa(ip->iph_sourceip));
-	    printf("         To: %s\n", inet_ntoa(ip->iph_destip));
-            printf("   Protocol: TCP\n");
-            printf("    Message: %s\n", (packet + sizeof(struct ethheader) + sizeof(struct ipheader) + sizeof(struct tcpheader)));
-            return;
-        case IPPROTO_UDP:
-            printf("   Protocol: UDP\n");
-            return;
-        case IPPROTO_ICMP:
-            printf("   Protocol: ICMP\n");
+	    char* buffer = (char *)((char *)tcp + TH_OFF(tcp)*4);
+            printf("    Message: %s\n", buffer);
             return;
         default:
             printf("   Protocol: others\n");
@@ -92,7 +97,7 @@ int main()
   pcap_t *handle;
   char errbuf[PCAP_ERRBUF_SIZE];
   struct bpf_program fp;
-  char filter_exp[] = "tcp";
+  char filter_exp[] = "tcp and port 5555";
   bpf_u_int32 net;
 
   // Step 1: Open live pcap session on NIC with name enp0s3
